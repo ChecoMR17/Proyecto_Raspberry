@@ -1,0 +1,37 @@
+// Purga de todas las imágenes, contenedores, volúmenes y redes sin usar o colgados
+
+sudo docker ps
+sudo docker stop
+
+//  limpiará los recursos que estén colgados, esto es, no vinculados a un contenedor:
+sudo docker system prune
+
+//eliminar los contenedores detenidos y todas las imágenes no utilizadas
+sudo docker system prune -a
+
+//Detener imágenes
+sudo docker stop image_name
+
+//Eliminar imagen
+sudo docker rmi image_name
+
+// Ip fija
+sudo nano /etc/dhcpcd.conf
+
+interface eth0
+static ip_address=192.168.8.101/24
+static routers=192.168.0.1
+
+sudo ddclient -daemon=0 -debug -verbose -noquiet
+sudo rm /var/cache/ddclient/ddclient.cache
+
+daemon=3600
+protocol=dyndns2
+use=web
+server=domains.google.com
+login=14fSV0GUQlzzeg8n
+password='G0TYxOdN5MepULJg'
+raspberry.telemetriamorelos.com
+
+git clone https://github.com/Sistem-CGR/Install_App.git
+
