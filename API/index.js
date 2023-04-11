@@ -105,12 +105,12 @@ ejecutarconsultas("select*from Rasp;", (error, result) => {
                                   let ValorBoniba = resultPLC.response._body._valuesAsArray[0];
                                   // Enviar
                                   let EnviarDatos = {
-                                    Addr:Addr,
+                                    Addr:Tipo.Addr,
                                     Nombre:Tipo.Nombre,
                                     Tipo:Tipo.Tipo,
                                     Valor:ValorBoniba,
                                     Variable:Tipo.Variable,
-                                    Descripcion:Descripcion,
+                                    Descripcion:Tipo.Descripcion,
                                   };
                                   if(Tipo.Descripcion=="AVISOS FALLAS"){
                                     ejecutarconsultas(`select*from Registro_Falla where Id_Parametro='${Tipo.Id}' order by Id desc limit 1`, (errores, resultA) => {
@@ -161,12 +161,12 @@ ejecutarconsultas("select*from Rasp;", (error, result) => {
                                   let ValorR = Bufer.readFloatBE(0);
                                   // Enviar
                                   let EnviarDatos = {
-                                    Addr:Addr,
+                                    Addr:Tipo.Addr,
                                     Nombre:Tipo.Nombre,
                                     Tipo:Tipo.Tipo,
                                     Valor:ValorR,
                                     Variable:Tipo.Variable,
-                                    Descripcion:Descripcion,
+                                    Descripcion:Tipo.Descripcion,
                                   };
                                   clientMQTT.publish(`${TopicBase}/${Tipo.Nombre}`, JSON.stringify(EnviarDatos),{ qos: 0, retain: false },(error) => {
                                       if (error) {
@@ -181,12 +181,12 @@ ejecutarconsultas("select*from Rasp;", (error, result) => {
                                   let LecturaRegistros =resultPLC.response._body._valuesAsArray[0];
                                   // Enviar
                                   let EnviarDatos = {
-                                    Addr:Addr,
+                                    Addr:Tipo.Addr,
                                     Nombre:Tipo.Nombre,
                                     Tipo:Tipo.Tipo,
                                     Valor:LecturaRegistros,
                                     Variable:Tipo.Variable,
-                                    Descripcion:Descripcion,
+                                    Descripcion:Tipo.Descripcion,
                                   };
                                   clientMQTT.publish(`${TopicBase}/${Tipo.Nombre}`,JSON.stringify(EnviarDatos) + "",{ qos: 0, retain: false },(error) => {
                                       if (error) {
@@ -303,7 +303,6 @@ ejecutarconsultas("select*from Rasp;", (error, result) => {
                 if(message.Addr!="" && message.Accion!=""){
                   let Addr=parseInt(message.Addr);
                   if(message.Accion=="on"){
-
                     clientPLC.writeSingleCoil(Addr, true);
                      // Guardamos
                      ejecutarconsultas(`insert into historial_acciones(Nombre,Descripcion,Fecha,Topico) values('ENCENDIDO DE BOBINA','SE ENCENDIÓ UNA BOBINA EN LA POSITION ${Addr}','${Fecha}','${topic}');`, (error, result) => {

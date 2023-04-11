@@ -11,7 +11,7 @@ services:
       MYSQL_DATABASE: "telemetria"
       # Creamos un nuevo usuario u contraseña
       MYSQL_USER: "Telemetria"
-      MYSQL_PASSWORD: "Telemetriacgr"
+      MYSQL_PASSWORD: "telemetria"
     #volumes:
     #  - /home/pi/Data:/var/lib/mysql
     ports:

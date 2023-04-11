@@ -27,8 +27,8 @@ Table5="Registro_Falla"
 #Desplegar la aplicación
 cd API
 sudo npm install
-sudo docker build -t API .
-sudo docker run --restart=always -d API
+sudo docker build -t api .
+sudo docker run --restart=always api
 cd ..
 
 table_exists_Table1=$(mysql -h $DB_HOST -P $DB_PORT -u $DB_USER_NAME -p$DB_PASSWORD_NAME -Nse "SELECT COUNT(*) FROM information_schema.tables WHERE table_name = '$Table1' AND table_schema = '$DB_NAME';")
