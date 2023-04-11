@@ -105,6 +105,7 @@ ejecutarconsultas("select*from Rasp;", (error, result) => {
                                   let ValorBoniba = resultPLC.response._body._valuesAsArray[0];
                                   // Enviar
                                   let EnviarDatos = {
+                                    Addr:Addr,
                                     Nombre:Tipo.Nombre,
                                     Tipo:Tipo.Tipo,
                                     Valor:ValorBoniba,
@@ -160,6 +161,7 @@ ejecutarconsultas("select*from Rasp;", (error, result) => {
                                   let ValorR = Bufer.readFloatBE(0);
                                   // Enviar
                                   let EnviarDatos = {
+                                    Addr:Addr,
                                     Nombre:Tipo.Nombre,
                                     Tipo:Tipo.Tipo,
                                     Valor:ValorR,
@@ -179,6 +181,7 @@ ejecutarconsultas("select*from Rasp;", (error, result) => {
                                   let LecturaRegistros =resultPLC.response._body._valuesAsArray[0];
                                   // Enviar
                                   let EnviarDatos = {
+                                    Addr:Addr,
                                     Nombre:Tipo.Nombre,
                                     Tipo:Tipo.Tipo,
                                     Valor:LecturaRegistros,
