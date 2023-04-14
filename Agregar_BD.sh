@@ -9,10 +9,7 @@ logo="
            CORPORATIVO GRUPO RIOS S.A. DE C.V.
 "
 echo "$logo"
-# Ejecutamos el contenedor
-sudo docker-compose -f docker-compose.yml up -d
-# Esperamos 20 segundos antes de continuar
-sleep 20
+
 #Declaracion de variables
 DB_HOST="127.0.0.1"
 DB_PORT=3307
@@ -143,11 +140,3 @@ if [[ $table_exists_Table4 == 0 ]]; then
   );
 EOF
 fi
-# Esperamos 20 segundos antes de continuar
-sleep 20
-#Desplegar la aplicación
-cd API
-sudo npm install
-pm2 start index.js
-pm2 startup systemd
-
