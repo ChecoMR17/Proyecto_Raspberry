@@ -668,6 +668,6 @@ ejecutarconsultas("select*from Rasp;", (error, result) => {
 
 setInterval(() => {
   throw "Reiniciar API ".green;
-}, 600000);
+}, 300000);
 
 

@@ -23,5 +23,6 @@ sudo npm install pm2 -g
 pm2 install pm2-server-monit
 pm2 install pm2-logrotate
 sudo chmod +x Run_app.sh
+sudo chmod +x Agregar_BD.sh
 sudo apt-get autoremove -y
 sudo shutdown -r now
