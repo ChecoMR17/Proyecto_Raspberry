@@ -57,7 +57,8 @@ if [[ $table_exists_Table2 == 0 ]]; then
     Nombre nvarchar(50) null,
     Descripcion nvarchar(150) not null,
     Variable nvarchar(1) not null,
-    Permisos nvarchar(1) not null
+    Permisos nvarchar(1) not null,
+    UM nvarchar(20) null
   );
 EOF
 mysql -h $DB_HOST -P $DB_PORT -u $DB_USER_NAME -p$DB_PASSWORD_NAME $DB_NAME << EOF

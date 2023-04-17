@@ -18,20 +18,4 @@ sudo docker rmi image_name
 // Ip fija
 sudo nano /etc/dhcpcd.conf
 
-interface eth0
-static ip_address=192.168.8.101/24
-static routers=192.168.0.1
-
-sudo ddclient -daemon=0 -debug -verbose -noquiet
-sudo rm /var/cache/ddclient/ddclient.cache
-
-daemon=3600
-protocol=dyndns2
-use=web
-server=domains.google.com
-login=14fSV0GUQlzzeg8n
-password='G0TYxOdN5MepULJg'
-raspberry.telemetriamorelos.com
-
-git clone https://github.com/Sistem-CGR/Install_App.git
 

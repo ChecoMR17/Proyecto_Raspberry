@@ -60,51 +60,52 @@ if [[ $table_exists_Table2 == 0 ]]; then
     Nombre nvarchar(50) null,
     Descripcion nvarchar(150) not null,
     Variable nvarchar(1) not null,
-    Permisos nvarchar(1) not null
+    Permisos nvarchar(1) not null,
+    UM nvarchar(20) null
   );
 EOF
 mysql -h $DB_HOST -P $DB_PORT -u $DB_USER_NAME -p$DB_PASSWORD_NAME $DB_NAME << EOF
-  insert into parametros(Tipo,Addr,Nombre,Descripcion,Variable,Permisos) values ('FLOAT','301','CORR_FASE_1_TELE','DATOS ELECTRICOS','L','S');
-  insert into parametros(Tipo,Addr,Nombre,Descripcion,Variable,Permisos) values ('FLOAT','303','CORR_FASE_2_TELE','DATOS ELECTRICOS','L','S');
-  insert into parametros(Tipo,Addr,Nombre,Descripcion,Variable,Permisos) values ('FLOAT','305','CORR_FASE_3_TELE','DATOS ELECTRICOS','L','S');
-  insert into parametros(Tipo,Addr,Nombre,Descripcion,Variable,Permisos) values ('INT','307','VOLT_FASE_1_2_TELE','DATOS ELECTRICOS','L','S');
-  insert into parametros(Tipo,Addr,Nombre,Descripcion,Variable,Permisos) values ('INT','309','VOLT_FASE_1_3_TELE','DATOS ELECTRICOS','L','S');
-  insert into parametros(Tipo,Addr,Nombre,Descripcion,Variable,Permisos) values ('INT','311','VOLT_FASE_2_3_TELE','DATOS ELECTRICOS','L','S');
-  insert into parametros(Tipo,Addr,Nombre,Descripcion,Variable,Permisos) values ('INT','313','VOLT_FASE_1_NTR_TELE','DATOS ELECTRICOS','L','S');
-  insert into parametros(Tipo,Addr,Nombre,Descripcion,Variable,Permisos) values ('INT','315','VOLT_FASE_2_NTR_TELE','DATOS ELECTRICOS','L','S');
-  insert into parametros(Tipo,Addr,Nombre,Descripcion,Variable,Permisos) values ('INT','317','VOLT_FASE_3_NTR_TELE','DATOS ELECTRICOS','L','S');
-  insert into parametros(Tipo,Addr,Nombre,Descripcion,Variable,Permisos) values ('FLOAT','319','KW_TRBJ_FASE_1_TELE','DATOS ELECTRICOS','L','S');
-  insert into parametros(Tipo,Addr,Nombre,Descripcion,Variable,Permisos) values ('FLOAT','321','KW_TRBJ_FASE_2_TELE','DATOS ELECTRICOS','L','S');
-  insert into parametros(Tipo,Addr,Nombre,Descripcion,Variable,Permisos) values ('FLOAT','323','KW_TRBJ_FASE_3_TELE','DATOS ELECTRICOS','L','S');
-  insert into parametros(Tipo,Addr,Nombre,Descripcion,Variable,Permisos) values ('FLOAT','325','POTENCIA_REACT_TELE','DATOS ELECTRICOS','L','S');
-  insert into parametros(Tipo,Addr,Nombre,Descripcion,Variable,Permisos) values ('FLOAT','327','POTENCIA_APARENTE_TELE','DATOS ELECTRICOS','L','S');
-  insert into parametros(Tipo,Addr,Nombre,Descripcion,Variable,Permisos) values ('FLOAT','329','FACTOR_POTENCIA_TELE','DATOS ELECTRICOS','L','S');
-  insert into parametros(Tipo,Addr,Nombre,Descripcion,Variable,Permisos) values ('FLOAT','331','NIVEL_DINAM_POZO_TELE','DATOS BOMBA POZO','L','S');
-  insert into parametros(Tipo,Addr,Nombre,Descripcion,Variable,Permisos) values ('FLOAT','333','FLUJO_INST_POZO_TELE','DATOS BOMBA POZO','L','S');
-  insert into parametros(Tipo,Addr,Nombre,Descripcion,Variable,Permisos) values ('FLOAT','335','FLUJO_ACUM_M3_POZO_TELE','DATOS BOMBA POZO','L','S');
-  insert into parametros(Tipo,Addr,Nombre,Descripcion,Variable,Permisos) values ('FLOAT','337','PRESION_POZO_TELE','DATOS BOMBA POZO','L','S');
-  insert into parametros(Tipo,Addr,Nombre,Descripcion,Variable,Permisos) values ('FLOAT','339','NIVEL_DINAM_REBOMBEO_TELE','DATOS REBOMBEO','L','S');
-  insert into parametros(Tipo,Addr,Nombre,Descripcion,Variable,Permisos) values ('FLOAT','341','FLUJO_INST_REBOMBEO_TELE','DATOS REBOMBEO','L','S');
-  insert into parametros(Tipo,Addr,Nombre,Descripcion,Variable,Permisos) values ('FLOAT','343','FLUJO_ACUM_M3_REBOMBEO_TELE','DATOS REBOMBEO','L','S');
-  insert into parametros(Tipo,Addr,Nombre,Descripcion,Variable,Permisos) values ('FLOAT','345','PRESION_REBOMBEO_TELE','DATOS REBOMBEO','L','S');
-  insert into parametros(Tipo,Addr,Nombre,Descripcion,Variable,Permisos) values ('FLOAT','347','NIVEL_TANQ_ELEVADO_1_TELE','DATOS RADAR','L','S');
-  insert into parametros(Tipo,Addr,Nombre,Descripcion,Variable,Permisos) values ('FLOAT','349','NIVEL_TANQ_ELEVADO_2_TELE','DATOS RADAR','L','S');
-  insert into parametros(Tipo,Addr,Nombre,Descripcion,Variable,Permisos) values ('FLOAT','351','NIVEL_CIST_SUPERFICIAL_TELE','DATOS RADAR','L','S');
-  insert into parametros(Tipo,Addr,Nombre,Descripcion,Variable,Permisos) values ('BIT','353','PB_ARRANQ_BOM_1_TELE','BOTONES FISICOS','L','S');
-  insert into parametros(Tipo,Addr,Nombre,Descripcion,Variable,Permisos) values ('BIT','355','PB_ARRANQ_BOM_2_TELE','BOTONES FISICOS','L','S');
-  insert into parametros(Tipo,Addr,Nombre,Descripcion,Variable,Permisos) values ('BIT','357','PB_ARRANQ_BOM_3_TELE','BOTONES FISICOS','L','S');
-  insert into parametros(Tipo,Addr,Nombre,Descripcion,Variable,Permisos) values ('BIT','359','PB_RESET_TELE','BOTONES FISICOS','L','S');
-  insert into parametros(Tipo,Addr,Nombre,Descripcion,Variable,Permisos) values ('BIT','361','FALLA_FASE_TELE','AVISOS FALLAS','L','S');
-  insert into parametros(Tipo,Addr,Nombre,Descripcion,Variable,Permisos) values ('BIT','363','PARO_EMER_TELE','AVISOS FALLAS','L','S');
-  insert into parametros(Tipo,Addr,Nombre,Descripcion,Variable,Permisos) values ('BIT','365','FALLA_BOMBA_1_TELE','AVISOS FALLAS','L','S');
-  insert into parametros(Tipo,Addr,Nombre,Descripcion,Variable,Permisos) values ('BIT','367','FALLA_BOMBA_2_TELE','AVISOS FALLAS','L','S');
-  insert into parametros(Tipo,Addr,Nombre,Descripcion,Variable,Permisos) values ('BIT','369','FALLA_BOMBA_3_TELE','AVISOS FALLAS','L','S');
-  insert into parametros(Tipo,Addr,Nombre,Descripcion,Variable,Permisos) values ('BIT','371','BOMBA_1_ON_TELE','ESTADO DE BOMBAS','A','S');
-  insert into parametros(Tipo,Addr,Nombre,Descripcion,Variable,Permisos) values ('BIT','373','BOMBA_2_ON_TELE','ESTADO DE BOMBAS','A','S');
-  insert into parametros(Tipo,Addr,Nombre,Descripcion,Variable,Permisos) values ('BIT','375','BOMBA_3_ON_TELE','ESTADO DE BOMBAS','A','S');
-  insert into parametros(Tipo,Addr,Nombre,Descripcion,Variable,Permisos) values ('INT','377','HMI_FRECUENCIA_BOM_1','FRECUENCIA BOMBAS  (MAXIMOS Y MINIMOS)','A','S');
-  insert into parametros(Tipo,Addr,Nombre,Descripcion,Variable,Permisos) values ('INT','379','HMI_FRECUENCIA_BOM_2','FRECUENCIA BOMBAS  (MAXIMOS Y MINIMOS)','A','S');
-  insert into parametros(Tipo,Addr,Nombre,Descripcion,Variable,Permisos) values ('INT','381','HMI_FRECUENCIA_BOM_3','FRECUENCIA BOMBAS  (MAXIMOS Y MINIMOS)','A','S');
+  insert into parametros(Tipo,Addr,Nombre,Descripcion,Variable,Permisos,UM) values ('FLOAT','301','CORR_FASE_1_TELE','DATOS ELECTRICOS','L','S','A');
+  insert into parametros(Tipo,Addr,Nombre,Descripcion,Variable,Permisos,UM) values ('FLOAT','303','CORR_FASE_2_TELE','DATOS ELECTRICOS','L','S','A');
+  insert into parametros(Tipo,Addr,Nombre,Descripcion,Variable,Permisos,UM) values ('FLOAT','305','CORR_FASE_3_TELE','DATOS ELECTRICOS','L','S','A');
+  insert into parametros(Tipo,Addr,Nombre,Descripcion,Variable,Permisos,UM) values ('INT','307','VOLT_FASE_1_2_TELE','DATOS ELECTRICOS','L','S','V');
+  insert into parametros(Tipo,Addr,Nombre,Descripcion,Variable,Permisos,UM) values ('INT','309','VOLT_FASE_1_3_TELE','DATOS ELECTRICOS','L','S','V');
+  insert into parametros(Tipo,Addr,Nombre,Descripcion,Variable,Permisos,UM) values ('INT','311','VOLT_FASE_2_3_TELE','DATOS ELECTRICOS','L','S','V');
+  insert into parametros(Tipo,Addr,Nombre,Descripcion,Variable,Permisos,UM) values ('INT','313','VOLT_FASE_1_NTR_TELE','DATOS ELECTRICOS','L','S','V');
+  insert into parametros(Tipo,Addr,Nombre,Descripcion,Variable,Permisos,UM) values ('INT','315','VOLT_FASE_2_NTR_TELE','DATOS ELECTRICOS','L','S','V');
+  insert into parametros(Tipo,Addr,Nombre,Descripcion,Variable,Permisos,UM) values ('INT','317','VOLT_FASE_3_NTR_TELE','DATOS ELECTRICOS','L','S','V');
+  insert into parametros(Tipo,Addr,Nombre,Descripcion,Variable,Permisos,UM) values ('FLOAT','319','KW_TRBJ_FASE_1_TELE','DATOS ELECTRICOS','L','S','KW');
+  insert into parametros(Tipo,Addr,Nombre,Descripcion,Variable,Permisos,UM) values ('FLOAT','321','KW_TRBJ_FASE_2_TELE','DATOS ELECTRICOS','L','S','KW');
+  insert into parametros(Tipo,Addr,Nombre,Descripcion,Variable,Permisos,UM) values ('FLOAT','323','KW_TRBJ_FASE_3_TELE','DATOS ELECTRICOS','L','S','KW');
+  insert into parametros(Tipo,Addr,Nombre,Descripcion,Variable,Permisos,UM) values ('FLOAT','325','POTENCIA_REACT_TELE','DATOS ELECTRICOS','L','S','KVAR');
+  insert into parametros(Tipo,Addr,Nombre,Descripcion,Variable,Permisos,UM) values ('FLOAT','327','POTENCIA_APARENTE_TELE','DATOS ELECTRICOS','L','S','KVAR');
+  insert into parametros(Tipo,Addr,Nombre,Descripcion,Variable,Permisos,UM) values ('FLOAT','329','FACTOR_POTENCIA_TELE','DATOS ELECTRICOS','L','S','%');
+  insert into parametros(Tipo,Addr,Nombre,Descripcion,Variable,Permisos,UM) values ('FLOAT','331','NIVEL_DINAM_POZO_TELE','DATOS BOMBA POZO','L','S','M');
+  insert into parametros(Tipo,Addr,Nombre,Descripcion,Variable,Permisos,UM) values ('FLOAT','333','FLUJO_INST_POZO_TELE','DATOS BOMBA POZO','L','S','L/S');
+  insert into parametros(Tipo,Addr,Nombre,Descripcion,Variable,Permisos,UM) values ('FLOAT','335','FLUJO_ACUM_M3_POZO_TELE','DATOS BOMBA POZO','L','S','M <sup>3</sup>');
+  insert into parametros(Tipo,Addr,Nombre,Descripcion,Variable,Permisos,UM) values ('FLOAT','337','PRESION_POZO_TELE','DATOS BOMBA POZO','L','S','Kg/Cm <sup>2</sup>');
+  insert into parametros(Tipo,Addr,Nombre,Descripcion,Variable,Permisos,UM) values ('FLOAT','339','NIVEL_DINAM_REBOMBEO_TELE','DATOS REBOMBEO','L','S','M');
+  insert into parametros(Tipo,Addr,Nombre,Descripcion,Variable,Permisos,UM) values ('FLOAT','341','FLUJO_INST_REBOMBEO_TELE','DATOS REBOMBEO','L','S','L/S');
+  insert into parametros(Tipo,Addr,Nombre,Descripcion,Variable,Permisos,UM) values ('FLOAT','343','FLUJO_ACUM_M3_REBOMBEO_TELE','DATOS REBOMBEO','L','S','M <sup>3</sup>');
+  insert into parametros(Tipo,Addr,Nombre,Descripcion,Variable,Permisos,UM) values ('FLOAT','345','PRESION_REBOMBEO_TELE','DATOS REBOMBEO','L','S','Kg/Cm <sup>2</sup>');
+  insert into parametros(Tipo,Addr,Nombre,Descripcion,Variable,Permisos,UM) values ('FLOAT','347','NIVEL_TANQ_ELEVADO_1_TELE','DATOS RADAR','L','S','M');
+  insert into parametros(Tipo,Addr,Nombre,Descripcion,Variable,Permisos,UM) values ('FLOAT','349','NIVEL_TANQ_ELEVADO_2_TELE','DATOS RADAR','L','S','M');
+  insert into parametros(Tipo,Addr,Nombre,Descripcion,Variable,Permisos,UM) values ('FLOAT','351','NIVEL_CIST_SUPERFICIAL_TELE','DATOS RADAR','L','S','M');
+  insert into parametros(Tipo,Addr,Nombre,Descripcion,Variable,Permisos,UM) values ('BIT','353','PB_ARRANQ_BOM_1_TELE','BOTONES FISICOS','L','S','');
+  insert into parametros(Tipo,Addr,Nombre,Descripcion,Variable,Permisos,UM) values ('BIT','355','PB_ARRANQ_BOM_2_TELE','BOTONES FISICOS','L','S','');
+  insert into parametros(Tipo,Addr,Nombre,Descripcion,Variable,Permisos,UM) values ('BIT','357','PB_ARRANQ_BOM_3_TELE','BOTONES FISICOS','L','S','');
+  insert into parametros(Tipo,Addr,Nombre,Descripcion,Variable,Permisos,UM) values ('BIT','359','PB_RESET_TELE','BOTONES FISICOS','L','S','');
+  insert into parametros(Tipo,Addr,Nombre,Descripcion,Variable,Permisos,UM) values ('BIT','361','FALLA_FASE_TELE','AVISOS FALLAS','L','S','');
+  insert into parametros(Tipo,Addr,Nombre,Descripcion,Variable,Permisos,UM) values ('BIT','363','PARO_EMER_TELE','AVISOS FALLAS','L','S','');
+  insert into parametros(Tipo,Addr,Nombre,Descripcion,Variable,Permisos,UM) values ('BIT','365','FALLA_BOMBA_1_TELE','AVISOS FALLAS','L','S','');
+  insert into parametros(Tipo,Addr,Nombre,Descripcion,Variable,Permisos,UM) values ('BIT','367','FALLA_BOMBA_2_TELE','AVISOS FALLAS','L','S','');
+  insert into parametros(Tipo,Addr,Nombre,Descripcion,Variable,Permisos,UM) values ('BIT','369','FALLA_BOMBA_3_TELE','AVISOS FALLAS','L','S','');
+  insert into parametros(Tipo,Addr,Nombre,Descripcion,Variable,Permisos,UM) values ('BIT','371','BOMBA_1_ON_TELE','ESTADO DE BOMBAS','A','S','');
+  insert into parametros(Tipo,Addr,Nombre,Descripcion,Variable,Permisos,UM) values ('BIT','373','BOMBA_2_ON_TELE','ESTADO DE BOMBAS','A','S','');
+  insert into parametros(Tipo,Addr,Nombre,Descripcion,Variable,Permisos,UM) values ('BIT','375','BOMBA_3_ON_TELE','ESTADO DE BOMBAS','A','S','');
+  insert into parametros(Tipo,Addr,Nombre,Descripcion,Variable,Permisos,UM) values ('INT','377','HMI_FRECUENCIA_BOM_1','FRECUENCIA BOMBAS  (MAXIMOS Y MINIMOS)','A','S','Hz');
+  insert into parametros(Tipo,Addr,Nombre,Descripcion,Variable,Permisos,UM) values ('INT','379','HMI_FRECUENCIA_BOM_2','FRECUENCIA BOMBAS  (MAXIMOS Y MINIMOS)','A','S','Hz');
+  insert into parametros(Tipo,Addr,Nombre,Descripcion,Variable,Permisos,UM) values ('INT','381','HMI_FRECUENCIA_BOM_3','FRECUENCIA BOMBAS  (MAXIMOS Y MINIMOS)','A','S','Hz');
 EOF
 fi
 

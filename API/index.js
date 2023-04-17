@@ -7,7 +7,7 @@ const colors = require("colors");
 const dotenv = require("dotenv");
 const mqtt = require("mqtt");
 const { log, Console } = require("console");
-const { exec } = require('child_process');
+const { exec } = require("child_process");
 dotenv.config();
 
 /* Importa el objeto `conexión` desde un archivo llamado `config.db` y lo asigna a
@@ -121,22 +121,25 @@ ejecutarconsultas("select*from Rasp;", (error, result) => {
           /* Ejecutando una consulta SQL para seleccionar todas las columnas de
           la tabla "parámetros". Los resultados de la consulta se pasan a una función de devolución de llamada
           como un parámetro denominado "resultP". */
-          ejecutarconsultas("select*from parametros order by Tipo,Nombre asc", (error, resultP) => {
+          ejecutarconsultas("select*from parametros order by Tipo,Nombre asc",   (error, resultP) => {
               if (!error) {
-                
                 /* El método setInterval() para ejecutar repetidamente un bloque
                 de código o una función en un intervalo específico (en milisegundos) y es utilizado para que consulte los registros añ plc en un determinado tiempo */
                 setInterval(() => {
                   /* Utilizamos la biblioteca Moment.js para obtener la fecha y la hora
                   actuales en el formato "AAAA-MM-DD HH:mm:ss" con un desplazamiento UTC de -06:00. */
-                  Fecha = moment().utcOffset("-06:00").format("YYYY-MM-DD HH:mm:ss");
+                  Fecha = moment()
+                    .utcOffset("-06:00")
+                    .format("YYYY-MM-DD HH:mm:ss");
 
                   /* El método `map()` se utiliza para iterar sobre cada elemento de la matriz y realizar
                   una función en cada elemento. La función que se ejecuta toma dos parámetros,
                   `Tipo` e `index` con los valores de la consulta a la base de datos */
                   resultP.map(function (Tipo, index) {
                     if (Tipo.Tipo == "BIT") {
-                      clientPLC.readCoils(Tipo.Addr, 1).then((resultPLC) => {
+                      clientPLC
+                        .readCoils(Tipo.Addr, 1)
+                        .then((resultPLC) => {
                           let ValorBoniba =
                             resultPLC.response._body._valuesAsArray[0];
                           // Enviar
@@ -144,7 +147,7 @@ ejecutarconsultas("select*from Rasp;", (error, result) => {
                             Addr: Tipo.Addr,
                             Nombre: Tipo.Nombre,
                             Tipo: Tipo.Tipo,
-                            Valor: ValorBoniba+" "+Tipo.UM,
+                            Valor: ValorBoniba + " " + Tipo.UM,
                             Variable: Tipo.Variable,
                             Descripcion: Tipo.Descripcion,
                           };
@@ -168,7 +171,7 @@ ejecutarconsultas("select*from Rasp;", (error, result) => {
                                       );
                                     }
                                   } else {
-                                    console.log("Insertar ");
+                                    //console.log("Insertar ");
                                     if (ValorBoniba == 1) {
                                       ejecutarconsultas(
                                         `insert into Registro_Falla(Id_Parametro,Valor,Fecha) values('${Tipo.Id}','${ValorBoniba}','${Fecha}');`,
@@ -207,7 +210,9 @@ ejecutarconsultas("select*from Rasp;", (error, result) => {
                           );
                         });
                     } else if (Tipo.Tipo == "FLOAT") {
-                      clientPLC.readHoldingRegisters(Tipo.Addr, 2).then((resultPLC) => {
+                      clientPLC
+                        .readHoldingRegisters(Tipo.Addr, 2)
+                        .then((resultPLC) => {
                           let FLOAT = resultPLC.response._body._valuesAsArray;
 
                           let Bufer = Buffer.allocUnsafe(4);
@@ -218,7 +223,7 @@ ejecutarconsultas("select*from Rasp;", (error, result) => {
                           let EnviarDatos = {
                             Addr: Tipo.Addr,
                             Nombre: Tipo.Nombre,
-                            Tipo: Tipo.Tipo+" "+Tipo.UM,
+                            Tipo: Tipo.Tipo + " " + Tipo.UM,
                             Valor: ValorR,
                             Variable: Tipo.Variable,
                             Descripcion: Tipo.Descripcion,
@@ -252,7 +257,7 @@ ejecutarconsultas("select*from Rasp;", (error, result) => {
                           let EnviarDatos = {
                             Addr: Tipo.Addr,
                             Nombre: Tipo.Nombre,
-                            Tipo: Tipo.Tipo+" "+Tipo.UM,
+                            Tipo: Tipo.Tipo + " " + Tipo.UM,
                             Valor: LecturaRegistros,
                             Variable: Tipo.Variable,
                             Descripcion: Tipo.Descripcion,
@@ -281,10 +286,6 @@ ejecutarconsultas("select*from Rasp;", (error, result) => {
                 }, result[0].Mqtt_Time);
 
                 setInterval(() => {
-                  /* Utilizamos la biblioteca Moment.js para obtener la fecha y
-                        la hora actuales en el formato "AAAA-MM-DD HH:mm:ss" con un desplazamiento
-                        UTC de -06:00. 
-                        */
                   Fecha = moment()
                     .utcOffset("-06:00")
                     .format("YYYY-MM-DD HH:mm:ss");
@@ -469,19 +470,18 @@ ejecutarconsultas("select*from Rasp;", (error, result) => {
                   `insert into historial_acciones(Nombre,Descripcion,Fecha,Topico) values('COMANDOS SQL','${message.query}','${Fecha}','${topic}');`,
                   (errorI, resultI) => {
                     if (!errorI) {
-                      //console.log("success ".green);
                       clientMQTT.publish(
                         `${TopicBase}/SQL/Result`,
-                        JSON.stringify(resultI),
+                        JSON.stringify(result),
                         { qos: 0, retain: false },
                         (errorP) => {
                           if (!errorP) {
-                            throw "Reiniciar API";
+                            setTimeout(() => {
+                              throw "Reiniciar API por actualización de la BD";
+                            }, 150);
                           }
                         }
                       );
-                    } else {
-                      //console.log("Error al ejecutar consulta ".red);
                     }
                   }
                 );
@@ -494,14 +494,224 @@ ejecutarconsultas("select*from Rasp;", (error, result) => {
 
     clientMQTT.on("reconnect", () => {
       console.log("Reconectando a ");
+      ejecutarconsultas("select*from parametros order by Tipo,Nombre asc",   (error, resultP) => {
+        if (!error) {
+          setInterval(() => {
+            Fecha = moment().utcOffset("-06:00").format("YYYY-MM-DD HH:mm:ss");
+            resultP.map(function (Tipo, index) {
+              if (Tipo.Tipo == "BIT") {
+                clientPLC.readCoils(Tipo.Addr, 1).then((resultPLC) => {
+                    let ValorBoniba =
+                      resultPLC.response._body._valuesAsArray[0];
+                    // Guardamos
+                    ejecutarconsultas(`insert into historial(Id_Parametro,Valor,Fecha) values('${Tipo.Id}','${ValorBoniba}','${Fecha}');`,(error, result) => {
+                        if (!error) {
+                          //console.log("success ".green);
+                        } else {
+                          //console.log("Error al ejecutar consulta ".red);
+                        }
+                      }
+                    );
+                  }).catch(function () {
+                    console.log("BIT " +require("util").inspect(arguments, { depth: null, }),null);
+                  });
+              } else if (Tipo.Tipo == "FLOAT") {
+                clientPLC.readCoils(Tipo.Addr, 2).then((resultPLC) => {
+                    let FLOAT = resultPLC.response._body._valuesAsArray;
+                    let Bufer = Buffer.allocUnsafe(4);
+                    Bufer.writeUInt16BE(FLOAT[0], 2);
+                    Bufer.writeUInt16BE(FLOAT[1], 0);
+                    let ValorR = Bufer.readFloatBE(0);
+                    // Guardamos
+                    ejecutarconsultas(
+                      `insert into historial(Id_Parametro,Valor,Fecha) values('${Tipo.Id}','${ValorR}','${Fecha}');`,
+                      (error, result) => {
+                        if (!error) {
+                          //console.log("success ".green);
+                        } else {
+                          //console.log("Error al ejecutar consulta ".red);
+                        }
+                      }
+                    );
+                  }).catch(function () {
+                    console.error("FLOAT " +require("util").inspect(arguments, {depth: null,})
+                    );
+                  });
+              } else {
+                clientPLC
+                  .readHoldingRegisters(Tipo.Addr, 1)
+                  .then((resultPLC) => {
+                    let LecturaRegistros = resultPLC.response._body._valuesAsArray;
+                    // Guardamos
+                    ejecutarconsultas(`insert into historial(Id_Parametro,Valor,Fecha) values('${Tipo.Id}','${LecturaRegistros}','${Fecha}');`,(error, result) => {
+                        if (!error) {
+                          //console.log("success ".green);
+                        } else {
+                          //console.log("Error al ejecutar consulta ".red);
+                        }
+                      }
+                    );
+                  })
+                  .catch(function () {
+                    console.error("INT " +require("util").inspect(arguments, {depth: null,})
+                    );
+                  });
+              }
+            });
+          }, result[0].Mysql_Time);
+        } else {
+          console.log("Error al consultar parámetros");
+        }
+      }
+    );
     });
 
     clientMQTT.on("error", () => {
       console.log("ERROR AL CONECTAR".red);
+      ejecutarconsultas("select*from parametros order by Tipo,Nombre asc",   (error, resultP) => {
+        if (!error) {
+          setInterval(() => {
+            Fecha = moment().utcOffset("-06:00").format("YYYY-MM-DD HH:mm:ss");
+            resultP.map(function (Tipo, index) {
+              if (Tipo.Tipo == "BIT") {
+                clientPLC.readCoils(Tipo.Addr, 1).then((resultPLC) => {
+                    let ValorBoniba =
+                      resultPLC.response._body._valuesAsArray[0];
+                    // Guardamos
+                    ejecutarconsultas(`insert into historial(Id_Parametro,Valor,Fecha) values('${Tipo.Id}','${ValorBoniba}','${Fecha}');`,(error, result) => {
+                        if (!error) {
+                          //console.log("success ".green);
+                        } else {
+                          //console.log("Error al ejecutar consulta ".red);
+                        }
+                      }
+                    );
+                  }).catch(function () {
+                    console.log("BIT " +require("util").inspect(arguments, { depth: null, }),null);
+                  });
+              } else if (Tipo.Tipo == "FLOAT") {
+                clientPLC.readCoils(Tipo.Addr, 2).then((resultPLC) => {
+                    let FLOAT = resultPLC.response._body._valuesAsArray;
+                    let Bufer = Buffer.allocUnsafe(4);
+                    Bufer.writeUInt16BE(FLOAT[0], 2);
+                    Bufer.writeUInt16BE(FLOAT[1], 0);
+                    let ValorR = Bufer.readFloatBE(0);
+                    // Guardamos
+                    ejecutarconsultas(
+                      `insert into historial(Id_Parametro,Valor,Fecha) values('${Tipo.Id}','${ValorR}','${Fecha}');`,
+                      (error, result) => {
+                        if (!error) {
+                          //console.log("success ".green);
+                        } else {
+                          //console.log("Error al ejecutar consulta ".red);
+                        }
+                      }
+                    );
+                  }).catch(function () {
+                    console.error("FLOAT " +require("util").inspect(arguments, {depth: null,})
+                    );
+                  });
+              } else {
+                clientPLC
+                  .readHoldingRegisters(Tipo.Addr, 1)
+                  .then((resultPLC) => {
+                    let LecturaRegistros = resultPLC.response._body._valuesAsArray;
+                    // Guardamos
+                    ejecutarconsultas(`insert into historial(Id_Parametro,Valor,Fecha) values('${Tipo.Id}','${LecturaRegistros}','${Fecha}');`,(error, result) => {
+                        if (!error) {
+                          //console.log("success ".green);
+                        } else {
+                          //console.log("Error al ejecutar consulta ".red);
+                        }
+                      }
+                    );
+                  })
+                  .catch(function () {
+                    console.error("INT " +require("util").inspect(arguments, {depth: null,})
+                    );
+                  });
+              }
+            });
+          }, result[0].Mysql_Time);
+        } else {
+          console.log("Error al consultar parámetros");
+        }
+      }
+    );
     });
 
     clientMQTT.on("offline", () => {
       console.log("Revisa tu coneccion a internet".red);
+      ejecutarconsultas("select*from parametros order by Tipo,Nombre asc",   (error, resultP) => {
+        if (!error) {
+          setInterval(() => {
+            Fecha = moment().utcOffset("-06:00").format("YYYY-MM-DD HH:mm:ss");
+            resultP.map(function (Tipo, index) {
+              if (Tipo.Tipo == "BIT") {
+                clientPLC.readCoils(Tipo.Addr, 1).then((resultPLC) => {
+                    let ValorBoniba =
+                      resultPLC.response._body._valuesAsArray[0];
+                    // Guardamos
+                    ejecutarconsultas(`insert into historial(Id_Parametro,Valor,Fecha) values('${Tipo.Id}','${ValorBoniba}','${Fecha}');`,(error, result) => {
+                        if (!error) {
+                          //console.log("success ".green);
+                        } else {
+                          //console.log("Error al ejecutar consulta ".red);
+                        }
+                      }
+                    );
+                  }).catch(function () {
+                    console.log("BIT " +require("util").inspect(arguments, { depth: null, }),null);
+                  });
+              } else if (Tipo.Tipo == "FLOAT") {
+                clientPLC.readCoils(Tipo.Addr, 2).then((resultPLC) => {
+                    let FLOAT = resultPLC.response._body._valuesAsArray;
+                    let Bufer = Buffer.allocUnsafe(4);
+                    Bufer.writeUInt16BE(FLOAT[0], 2);
+                    Bufer.writeUInt16BE(FLOAT[1], 0);
+                    let ValorR = Bufer.readFloatBE(0);
+                    // Guardamos
+                    ejecutarconsultas(
+                      `insert into historial(Id_Parametro,Valor,Fecha) values('${Tipo.Id}','${ValorR}','${Fecha}');`,
+                      (error, result) => {
+                        if (!error) {
+                          //console.log("success ".green);
+                        } else {
+                          //console.log("Error al ejecutar consulta ".red);
+                        }
+                      }
+                    );
+                  }).catch(function () {
+                    console.error("FLOAT " +require("util").inspect(arguments, {depth: null,})
+                    );
+                  });
+              } else {
+                clientPLC
+                  .readHoldingRegisters(Tipo.Addr, 1)
+                  .then((resultPLC) => {
+                    let LecturaRegistros = resultPLC.response._body._valuesAsArray;
+                    // Guardamos
+                    ejecutarconsultas(`insert into historial(Id_Parametro,Valor,Fecha) values('${Tipo.Id}','${LecturaRegistros}','${Fecha}');`,(error, result) => {
+                        if (!error) {
+                          //console.log("success ".green);
+                        } else {
+                          //console.log("Error al ejecutar consulta ".red);
+                        }
+                      }
+                    );
+                  })
+                  .catch(function () {
+                    console.error("INT " +require("util").inspect(arguments, {depth: null,})
+                    );
+                  });
+              }
+            });
+          }, result[0].Mysql_Time);
+        } else {
+          console.log("Error al consultar parámetros");
+        }
+      }
+    );
     });
     clientMQTT.on("disconnect", () => {
       console.log("desconectado".red);
@@ -626,11 +836,7 @@ ejecutarconsultas("select*from Rasp;", (error, result) => {
                           );
                         })
                         .catch(function () {
-                          console.error(
-                            "INT " +
-                              require("util").inspect(arguments, {
-                                depth: null,
-                              })
+                          console.error("INT " +require("util").inspect(arguments, {depth: null,})
                           );
                         });
                     }
@@ -667,7 +873,5 @@ ejecutarconsultas("select*from Rasp;", (error, result) => {
 });
 
 setInterval(() => {
-  throw "Reiniciar API ".green;
+  throw "Reiniciar API para recolección ".green;
 }, 300000);
-
-
