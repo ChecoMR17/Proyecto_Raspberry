@@ -6,6 +6,8 @@ const net = require("net");
 const colors = require("colors");
 const dotenv = require("dotenv");
 const mqtt = require("mqtt");
+const request = require("request");
+const http = require("http");
 const { log, Console } = require("console");
 const { exec } = require("child_process");
 dotenv.config();
@@ -76,7 +78,7 @@ ejecutarconsultas("select*from Rasp;", (error, result) => {
     /*mqttURL que contiene una URL de
     WebSocket para conectarse a un agente de MQTT. La URL se construye mediante la interpolación de
     cadenas para incluir la información del host y del puerto obtenida de una matriz de "resultados". */
-    const mqttURL = `ws://${result[0].Host_Mqtt}:${result[0].Port_Mqtt}/mqtt`;
+    const mqttURL = `tcp://${result[0].Host_Mqtt}:${result[0].Port_Mqtt}`;
 
     /* Client_Id y le asigna un valor de cadena que
     incluye la palabra "Server" seguida de un número aleatorio entre 1 y 10000. El propósito de
@@ -84,6 +86,39 @@ ejecutarconsultas("select*from Rasp;", (error, result) => {
     const Client_Id = `Server_${Math.floor(
       Math.random() * (10000 - 1 + 1) + 1
     )}`;
+
+    http
+      .get("http://httpbin.org/ip", (res) => {
+        let data = "";
+        res.on("data", (chunk) => {
+          data += chunk;
+        });
+        res.on("end", () => {
+          const publicIp = JSON.parse(data).origin;
+          const apiUrl = `http://ip-api.com/json/${publicIp}`;
+          let location;
+          request(apiUrl, function (error, response, body) {
+            if (!error && response.statusCode == 200) {
+              location = JSON.parse(body);
+              latitude = location.lat;
+              longitude = location.lon;
+            }
+            ejecutarconsultas(
+              `update Rasp set Ip_Publica='${publicIp}',longitud='${latitude}',latitud='${longitude}' where Id='1';`,
+              (error, Result_R) => {
+                if (!error) {
+                  //console.log("success ".green);
+                }
+              }
+            );
+            /*console.log(publicIp);
+            console.log(location.lat, location.lon);*/
+          });
+        });
+      })
+      .on("error", (err) => {
+        console.log("Error: " + err.message);
+      });
 
     /* opciones_mqtt con varias de propiedades para
     configurar una conexión de cliente MQTT. Estas propiedades incluyen el ID del cliente, si
@@ -121,7 +156,9 @@ ejecutarconsultas("select*from Rasp;", (error, result) => {
           /* Ejecutando una consulta SQL para seleccionar todas las columnas de
           la tabla "parámetros". Los resultados de la consulta se pasan a una función de devolución de llamada
           como un parámetro denominado "resultP". */
-          ejecutarconsultas("select*from parametros order by Tipo,Nombre asc",   (error, resultP) => {
+          ejecutarconsultas(
+            "select*from parametros order by Tipo,Nombre asc",
+            (error, resultP) => {
               if (!error) {
                 /* El método setInterval() para ejecutar repetidamente un bloque
                 de código o una función en un intervalo específico (en milisegundos) y es utilizado para que consulte los registros añ plc en un determinado tiempo */
@@ -131,7 +168,8 @@ ejecutarconsultas("select*from Rasp;", (error, result) => {
                   Fecha = moment()
                     .utcOffset("-06:00")
                     .format("YYYY-MM-DD HH:mm:ss");
-
+                  let latitude;
+                  let longitude;
                   /* El método `map()` se utiliza para iterar sobre cada elemento de la matriz y realizar
                   una función en cada elemento. La función que se ejecuta toma dos parámetros,
                   `Tipo` e `index` con los valores de la consulta a la base de datos */
@@ -143,13 +181,25 @@ ejecutarconsultas("select*from Rasp;", (error, result) => {
                           let ValorBoniba =
                             resultPLC.response._body._valuesAsArray[0];
                           // Enviar
+                          // -----------------------------------------------------
+
+                          //------------------------------------------------------
                           let EnviarDatos = {
+                            fecha_hora: Fecha,
+                            id_estacion: "Por definir",
+                            nombre_estacion: "Por definir",
+                            Ip_Publica: result[0].Ip_Publica,
+                            Ubicacion: {
+                              longitud: result[0].longitud,
+                              latitud: result[0].latitud,
+                            },
                             Addr: Tipo.Addr,
                             Nombre: Tipo.Nombre,
                             Tipo: Tipo.Tipo,
-                            Valor: ValorBoniba + " " + Tipo.UM,
+                            Valor: ValorBoniba,
                             Variable: Tipo.Variable,
                             Descripcion: Tipo.Descripcion,
+                            UM: Tipo.UM,
                           };
                           if (Tipo.Descripcion == "AVISOS FALLAS") {
                             ejecutarconsultas(
@@ -221,12 +271,21 @@ ejecutarconsultas("select*from Rasp;", (error, result) => {
                           let ValorR = Bufer.readFloatBE(0).toFixed(2);
                           // Enviar
                           let EnviarDatos = {
+                            fecha_hora: Fecha,
+                            id_estacion: "Por definir",
+                            nombre_estacion: "Por definir",
+                            Ip_Publica: result[0].Ip_Publica,
+                            Ubicacion: {
+                              longitud: result[0].longitud,
+                              latitud: result[0].latitud,
+                            },
                             Addr: Tipo.Addr,
                             Nombre: Tipo.Nombre,
-                            Tipo: Tipo.Tipo + " " + Tipo.UM,
+                            Tipo: Tipo.Tipo,
                             Valor: ValorR,
                             Variable: Tipo.Variable,
                             Descripcion: Tipo.Descripcion,
+                            UM: Tipo.UM,
                           };
                           clientMQTT.publish(
                             `${TopicBase}/${Tipo.Nombre}`,
@@ -255,12 +314,21 @@ ejecutarconsultas("select*from Rasp;", (error, result) => {
                             resultPLC.response._body._valuesAsArray[0];
                           // Enviar
                           let EnviarDatos = {
+                            fecha_hora: Fecha,
+                            id_estacion: "Por definir",
+                            nombre_estacion: "Por definir",
+                            Ip_Publica: result[0].Ip_Publica,
+                            Ubicacion: {
+                              longitud: result[0].longitud,
+                              latitud: result[0].latitud,
+                            },
                             Addr: Tipo.Addr,
                             Nombre: Tipo.Nombre,
-                            Tipo: Tipo.Tipo + " " + Tipo.UM,
+                            Tipo: Tipo.Tipo,
                             Valor: LecturaRegistros,
                             Variable: Tipo.Variable,
                             Descripcion: Tipo.Descripcion,
+                            UM: Tipo.UM,
                           };
                           clientMQTT.publish(
                             `${TopicBase}/${Tipo.Nombre}`,
@@ -396,18 +464,28 @@ ejecutarconsultas("select*from Rasp;", (error, result) => {
       switch (topic) {
         case `${TopicBase}/WR`:
           if (message.Addr != "" && message.Valor != "") {
-            clientPLC.writeSingleCoil(message.Addr, message.Valor);
-            // Guardamos
-            ejecutarconsultas(
-              `insert into historial_acciones(Nombre,Descripcion,Fecha,Topico) values('SE ESCRIBIÓ EN UN REGISTRO','SE ESCRIBIÓ EL VALOR ${message.Addr} EN LA POSICIÓN ${message.Addr}','${Fecha}','${topic}');`,
-              (error, result) => {
-                if (!error) {
-                  //console.log("success ".green);
-                } else {
-                  //console.log("Error al ejecutar consulta ".red);
-                }
-              }
-            );
+            /*
+            console.log(message.Addr)
+            console.log(message.Valor)*/
+            clientPLC
+              .writeSingleRegister(message.Addr, message.Valor)
+              .then(function (resp) {
+                console.log(resp);
+                // Guardamos
+                ejecutarconsultas(
+                  `insert into historial_acciones(Nombre,Descripcion,Fecha,Topico) values('SE ESCRIBIÓ EN UN REGISTRO','SE ESCRIBIÓ EL VALOR ${message.Addr} EN LA POSICIÓN ${message.Addr}','${Fecha}','${topic}');`,
+                  (error, result) => {
+                    if (!error) {
+                      //console.log("success ".green);
+                    } else {
+                      //console.log("Error al ejecutar consulta ".red);
+                    }
+                  }
+                );
+              })
+              .catch(function () {
+                console.error(arguments);
+              });
           } else {
             console.log("Vació");
           }
@@ -494,224 +572,293 @@ ejecutarconsultas("select*from Rasp;", (error, result) => {
 
     clientMQTT.on("reconnect", () => {
       console.log("Reconectando a ");
-      ejecutarconsultas("select*from parametros order by Tipo,Nombre asc",   (error, resultP) => {
-        if (!error) {
-          setInterval(() => {
-            Fecha = moment().utcOffset("-06:00").format("YYYY-MM-DD HH:mm:ss");
-            resultP.map(function (Tipo, index) {
-              if (Tipo.Tipo == "BIT") {
-                clientPLC.readCoils(Tipo.Addr, 1).then((resultPLC) => {
-                    let ValorBoniba =
-                      resultPLC.response._body._valuesAsArray[0];
-                    // Guardamos
-                    ejecutarconsultas(`insert into historial(Id_Parametro,Valor,Fecha) values('${Tipo.Id}','${ValorBoniba}','${Fecha}');`,(error, result) => {
-                        if (!error) {
-                          //console.log("success ".green);
-                        } else {
-                          //console.log("Error al ejecutar consulta ".red);
+      ejecutarconsultas(
+        "select*from parametros order by Tipo,Nombre asc",
+        (error, resultP) => {
+          if (!error) {
+            setInterval(() => {
+              Fecha = moment()
+                .utcOffset("-06:00")
+                .format("YYYY-MM-DD HH:mm:ss");
+              resultP.map(function (Tipo, index) {
+                if (Tipo.Tipo == "BIT") {
+                  clientPLC
+                    .readCoils(Tipo.Addr, 1)
+                    .then((resultPLC) => {
+                      let ValorBoniba =
+                        resultPLC.response._body._valuesAsArray[0];
+                      // Guardamos
+                      ejecutarconsultas(
+                        `insert into historial(Id_Parametro,Valor,Fecha) values('${Tipo.Id}','${ValorBoniba}','${Fecha}');`,
+                        (error, result) => {
+                          if (!error) {
+                            //console.log("success ".green);
+                          } else {
+                            //console.log("Error al ejecutar consulta ".red);
+                          }
                         }
-                      }
-                    );
-                  }).catch(function () {
-                    console.log("BIT " +require("util").inspect(arguments, { depth: null, }),null);
-                  });
-              } else if (Tipo.Tipo == "FLOAT") {
-                clientPLC.readCoils(Tipo.Addr, 2).then((resultPLC) => {
-                    let FLOAT = resultPLC.response._body._valuesAsArray;
-                    let Bufer = Buffer.allocUnsafe(4);
-                    Bufer.writeUInt16BE(FLOAT[0], 2);
-                    Bufer.writeUInt16BE(FLOAT[1], 0);
-                    let ValorR = Bufer.readFloatBE(0);
-                    // Guardamos
-                    ejecutarconsultas(
-                      `insert into historial(Id_Parametro,Valor,Fecha) values('${Tipo.Id}','${ValorR}','${Fecha}');`,
-                      (error, result) => {
-                        if (!error) {
-                          //console.log("success ".green);
-                        } else {
-                          //console.log("Error al ejecutar consulta ".red);
+                      );
+                    })
+                    .catch(function () {
+                      console.log(
+                        "BIT " +
+                          require("util").inspect(arguments, { depth: null }),
+                        null
+                      );
+                    });
+                } else if (Tipo.Tipo == "FLOAT") {
+                  clientPLC
+                    .readCoils(Tipo.Addr, 2)
+                    .then((resultPLC) => {
+                      let FLOAT = resultPLC.response._body._valuesAsArray;
+                      let Bufer = Buffer.allocUnsafe(4);
+                      Bufer.writeUInt16BE(FLOAT[0], 2);
+                      Bufer.writeUInt16BE(FLOAT[1], 0);
+                      let ValorR = Bufer.readFloatBE(0);
+                      // Guardamos
+                      ejecutarconsultas(
+                        `insert into historial(Id_Parametro,Valor,Fecha) values('${Tipo.Id}','${ValorR}','${Fecha}');`,
+                        (error, result) => {
+                          if (!error) {
+                            //console.log("success ".green);
+                          } else {
+                            //console.log("Error al ejecutar consulta ".red);
+                          }
                         }
-                      }
-                    );
-                  }).catch(function () {
-                    console.error("FLOAT " +require("util").inspect(arguments, {depth: null,})
-                    );
-                  });
-              } else {
-                clientPLC
-                  .readHoldingRegisters(Tipo.Addr, 1)
-                  .then((resultPLC) => {
-                    let LecturaRegistros = resultPLC.response._body._valuesAsArray;
-                    // Guardamos
-                    ejecutarconsultas(`insert into historial(Id_Parametro,Valor,Fecha) values('${Tipo.Id}','${LecturaRegistros}','${Fecha}');`,(error, result) => {
-                        if (!error) {
-                          //console.log("success ".green);
-                        } else {
-                          //console.log("Error al ejecutar consulta ".red);
+                      );
+                    })
+                    .catch(function () {
+                      console.error(
+                        "FLOAT " +
+                          require("util").inspect(arguments, { depth: null })
+                      );
+                    });
+                } else {
+                  clientPLC
+                    .readHoldingRegisters(Tipo.Addr, 1)
+                    .then((resultPLC) => {
+                      let LecturaRegistros =
+                        resultPLC.response._body._valuesAsArray;
+                      // Guardamos
+                      ejecutarconsultas(
+                        `insert into historial(Id_Parametro,Valor,Fecha) values('${Tipo.Id}','${LecturaRegistros}','${Fecha}');`,
+                        (error, result) => {
+                          if (!error) {
+                            //console.log("success ".green);
+                          } else {
+                            //console.log("Error al ejecutar consulta ".red);
+                          }
                         }
-                      }
-                    );
-                  })
-                  .catch(function () {
-                    console.error("INT " +require("util").inspect(arguments, {depth: null,})
-                    );
-                  });
-              }
-            });
-          }, result[0].Mysql_Time);
-        } else {
-          console.log("Error al consultar parámetros");
+                      );
+                    })
+                    .catch(function () {
+                      console.error(
+                        "INT " +
+                          require("util").inspect(arguments, { depth: null })
+                      );
+                    });
+                }
+              });
+            }, result[0].Mysql_Time);
+          } else {
+            console.log("Error al consultar parámetros");
+          }
         }
-      }
-    );
+      );
     });
 
     clientMQTT.on("error", () => {
       console.log("ERROR AL CONECTAR".red);
-      ejecutarconsultas("select*from parametros order by Tipo,Nombre asc",   (error, resultP) => {
-        if (!error) {
-          setInterval(() => {
-            Fecha = moment().utcOffset("-06:00").format("YYYY-MM-DD HH:mm:ss");
-            resultP.map(function (Tipo, index) {
-              if (Tipo.Tipo == "BIT") {
-                clientPLC.readCoils(Tipo.Addr, 1).then((resultPLC) => {
-                    let ValorBoniba =
-                      resultPLC.response._body._valuesAsArray[0];
-                    // Guardamos
-                    ejecutarconsultas(`insert into historial(Id_Parametro,Valor,Fecha) values('${Tipo.Id}','${ValorBoniba}','${Fecha}');`,(error, result) => {
-                        if (!error) {
-                          //console.log("success ".green);
-                        } else {
-                          //console.log("Error al ejecutar consulta ".red);
+      ejecutarconsultas(
+        "select*from parametros order by Tipo,Nombre asc",
+        (error, resultP) => {
+          if (!error) {
+            setInterval(() => {
+              Fecha = moment()
+                .utcOffset("-06:00")
+                .format("YYYY-MM-DD HH:mm:ss");
+              resultP.map(function (Tipo, index) {
+                if (Tipo.Tipo == "BIT") {
+                  clientPLC
+                    .readCoils(Tipo.Addr, 1)
+                    .then((resultPLC) => {
+                      let ValorBoniba =
+                        resultPLC.response._body._valuesAsArray[0];
+                      // Guardamos
+                      ejecutarconsultas(
+                        `insert into historial(Id_Parametro,Valor,Fecha) values('${Tipo.Id}','${ValorBoniba}','${Fecha}');`,
+                        (error, result) => {
+                          if (!error) {
+                            //console.log("success ".green);
+                          } else {
+                            //console.log("Error al ejecutar consulta ".red);
+                          }
                         }
-                      }
-                    );
-                  }).catch(function () {
-                    console.log("BIT " +require("util").inspect(arguments, { depth: null, }),null);
-                  });
-              } else if (Tipo.Tipo == "FLOAT") {
-                clientPLC.readCoils(Tipo.Addr, 2).then((resultPLC) => {
-                    let FLOAT = resultPLC.response._body._valuesAsArray;
-                    let Bufer = Buffer.allocUnsafe(4);
-                    Bufer.writeUInt16BE(FLOAT[0], 2);
-                    Bufer.writeUInt16BE(FLOAT[1], 0);
-                    let ValorR = Bufer.readFloatBE(0);
-                    // Guardamos
-                    ejecutarconsultas(
-                      `insert into historial(Id_Parametro,Valor,Fecha) values('${Tipo.Id}','${ValorR}','${Fecha}');`,
-                      (error, result) => {
-                        if (!error) {
-                          //console.log("success ".green);
-                        } else {
-                          //console.log("Error al ejecutar consulta ".red);
+                      );
+                    })
+                    .catch(function () {
+                      console.log(
+                        "BIT " +
+                          require("util").inspect(arguments, { depth: null }),
+                        null
+                      );
+                    });
+                } else if (Tipo.Tipo == "FLOAT") {
+                  clientPLC
+                    .readCoils(Tipo.Addr, 2)
+                    .then((resultPLC) => {
+                      let FLOAT = resultPLC.response._body._valuesAsArray;
+                      let Bufer = Buffer.allocUnsafe(4);
+                      Bufer.writeUInt16BE(FLOAT[0], 2);
+                      Bufer.writeUInt16BE(FLOAT[1], 0);
+                      let ValorR = Bufer.readFloatBE(0);
+                      // Guardamos
+                      ejecutarconsultas(
+                        `insert into historial(Id_Parametro,Valor,Fecha) values('${Tipo.Id}','${ValorR}','${Fecha}');`,
+                        (error, result) => {
+                          if (!error) {
+                            //console.log("success ".green);
+                          } else {
+                            //console.log("Error al ejecutar consulta ".red);
+                          }
                         }
-                      }
-                    );
-                  }).catch(function () {
-                    console.error("FLOAT " +require("util").inspect(arguments, {depth: null,})
-                    );
-                  });
-              } else {
-                clientPLC
-                  .readHoldingRegisters(Tipo.Addr, 1)
-                  .then((resultPLC) => {
-                    let LecturaRegistros = resultPLC.response._body._valuesAsArray;
-                    // Guardamos
-                    ejecutarconsultas(`insert into historial(Id_Parametro,Valor,Fecha) values('${Tipo.Id}','${LecturaRegistros}','${Fecha}');`,(error, result) => {
-                        if (!error) {
-                          //console.log("success ".green);
-                        } else {
-                          //console.log("Error al ejecutar consulta ".red);
+                      );
+                    })
+                    .catch(function () {
+                      console.error(
+                        "FLOAT " +
+                          require("util").inspect(arguments, { depth: null })
+                      );
+                    });
+                } else {
+                  clientPLC
+                    .readHoldingRegisters(Tipo.Addr, 1)
+                    .then((resultPLC) => {
+                      let LecturaRegistros =
+                        resultPLC.response._body._valuesAsArray;
+                      // Guardamos
+                      ejecutarconsultas(
+                        `insert into historial(Id_Parametro,Valor,Fecha) values('${Tipo.Id}','${LecturaRegistros}','${Fecha}');`,
+                        (error, result) => {
+                          if (!error) {
+                            //console.log("success ".green);
+                          } else {
+                            //console.log("Error al ejecutar consulta ".red);
+                          }
                         }
-                      }
-                    );
-                  })
-                  .catch(function () {
-                    console.error("INT " +require("util").inspect(arguments, {depth: null,})
-                    );
-                  });
-              }
-            });
-          }, result[0].Mysql_Time);
-        } else {
-          console.log("Error al consultar parámetros");
+                      );
+                    })
+                    .catch(function () {
+                      console.error(
+                        "INT " +
+                          require("util").inspect(arguments, { depth: null })
+                      );
+                    });
+                }
+              });
+            }, result[0].Mysql_Time);
+          } else {
+            console.log("Error al consultar parámetros");
+          }
         }
-      }
-    );
+      );
     });
 
     clientMQTT.on("offline", () => {
       console.log("Revisa tu coneccion a internet".red);
-      ejecutarconsultas("select*from parametros order by Tipo,Nombre asc",   (error, resultP) => {
-        if (!error) {
-          setInterval(() => {
-            Fecha = moment().utcOffset("-06:00").format("YYYY-MM-DD HH:mm:ss");
-            resultP.map(function (Tipo, index) {
-              if (Tipo.Tipo == "BIT") {
-                clientPLC.readCoils(Tipo.Addr, 1).then((resultPLC) => {
-                    let ValorBoniba =
-                      resultPLC.response._body._valuesAsArray[0];
-                    // Guardamos
-                    ejecutarconsultas(`insert into historial(Id_Parametro,Valor,Fecha) values('${Tipo.Id}','${ValorBoniba}','${Fecha}');`,(error, result) => {
-                        if (!error) {
-                          //console.log("success ".green);
-                        } else {
-                          //console.log("Error al ejecutar consulta ".red);
+      ejecutarconsultas(
+        "select*from parametros order by Tipo,Nombre asc",
+        (error, resultP) => {
+          if (!error) {
+            setInterval(() => {
+              Fecha = moment()
+                .utcOffset("-06:00")
+                .format("YYYY-MM-DD HH:mm:ss");
+              resultP.map(function (Tipo, index) {
+                if (Tipo.Tipo == "BIT") {
+                  clientPLC
+                    .readCoils(Tipo.Addr, 1)
+                    .then((resultPLC) => {
+                      let ValorBoniba =
+                        resultPLC.response._body._valuesAsArray[0];
+                      // Guardamos
+                      ejecutarconsultas(
+                        `insert into historial(Id_Parametro,Valor,Fecha) values('${Tipo.Id}','${ValorBoniba}','${Fecha}');`,
+                        (error, result) => {
+                          if (!error) {
+                            //console.log("success ".green);
+                          } else {
+                            //console.log("Error al ejecutar consulta ".red);
+                          }
                         }
-                      }
-                    );
-                  }).catch(function () {
-                    console.log("BIT " +require("util").inspect(arguments, { depth: null, }),null);
-                  });
-              } else if (Tipo.Tipo == "FLOAT") {
-                clientPLC.readCoils(Tipo.Addr, 2).then((resultPLC) => {
-                    let FLOAT = resultPLC.response._body._valuesAsArray;
-                    let Bufer = Buffer.allocUnsafe(4);
-                    Bufer.writeUInt16BE(FLOAT[0], 2);
-                    Bufer.writeUInt16BE(FLOAT[1], 0);
-                    let ValorR = Bufer.readFloatBE(0);
-                    // Guardamos
-                    ejecutarconsultas(
-                      `insert into historial(Id_Parametro,Valor,Fecha) values('${Tipo.Id}','${ValorR}','${Fecha}');`,
-                      (error, result) => {
-                        if (!error) {
-                          //console.log("success ".green);
-                        } else {
-                          //console.log("Error al ejecutar consulta ".red);
+                      );
+                    })
+                    .catch(function () {
+                      console.log(
+                        "BIT " +
+                          require("util").inspect(arguments, { depth: null }),
+                        null
+                      );
+                    });
+                } else if (Tipo.Tipo == "FLOAT") {
+                  clientPLC
+                    .readCoils(Tipo.Addr, 2)
+                    .then((resultPLC) => {
+                      let FLOAT = resultPLC.response._body._valuesAsArray;
+                      let Bufer = Buffer.allocUnsafe(4);
+                      Bufer.writeUInt16BE(FLOAT[0], 2);
+                      Bufer.writeUInt16BE(FLOAT[1], 0);
+                      let ValorR = Bufer.readFloatBE(0);
+                      // Guardamos
+                      ejecutarconsultas(
+                        `insert into historial(Id_Parametro,Valor,Fecha) values('${Tipo.Id}','${ValorR}','${Fecha}');`,
+                        (error, result) => {
+                          if (!error) {
+                            //console.log("success ".green);
+                          } else {
+                            //console.log("Error al ejecutar consulta ".red);
+                          }
                         }
-                      }
-                    );
-                  }).catch(function () {
-                    console.error("FLOAT " +require("util").inspect(arguments, {depth: null,})
-                    );
-                  });
-              } else {
-                clientPLC
-                  .readHoldingRegisters(Tipo.Addr, 1)
-                  .then((resultPLC) => {
-                    let LecturaRegistros = resultPLC.response._body._valuesAsArray;
-                    // Guardamos
-                    ejecutarconsultas(`insert into historial(Id_Parametro,Valor,Fecha) values('${Tipo.Id}','${LecturaRegistros}','${Fecha}');`,(error, result) => {
-                        if (!error) {
-                          //console.log("success ".green);
-                        } else {
-                          //console.log("Error al ejecutar consulta ".red);
+                      );
+                    })
+                    .catch(function () {
+                      console.error(
+                        "FLOAT " +
+                          require("util").inspect(arguments, { depth: null })
+                      );
+                    });
+                } else {
+                  clientPLC
+                    .readHoldingRegisters(Tipo.Addr, 1)
+                    .then((resultPLC) => {
+                      let LecturaRegistros =
+                        resultPLC.response._body._valuesAsArray;
+                      // Guardamos
+                      ejecutarconsultas(
+                        `insert into historial(Id_Parametro,Valor,Fecha) values('${Tipo.Id}','${LecturaRegistros}','${Fecha}');`,
+                        (error, result) => {
+                          if (!error) {
+                            //console.log("success ".green);
+                          } else {
+                            //console.log("Error al ejecutar consulta ".red);
+                          }
                         }
-                      }
-                    );
-                  })
-                  .catch(function () {
-                    console.error("INT " +require("util").inspect(arguments, {depth: null,})
-                    );
-                  });
-              }
-            });
-          }, result[0].Mysql_Time);
-        } else {
-          console.log("Error al consultar parámetros");
+                      );
+                    })
+                    .catch(function () {
+                      console.error(
+                        "INT " +
+                          require("util").inspect(arguments, { depth: null })
+                      );
+                    });
+                }
+              });
+            }, result[0].Mysql_Time);
+          } else {
+            console.log("Error al consultar parámetros");
+          }
         }
-      }
-    );
+      );
     });
     clientMQTT.on("disconnect", () => {
       console.log("desconectado".red);
@@ -719,138 +866,179 @@ ejecutarconsultas("select*from Rasp;", (error, result) => {
     /*----------------------------------------------------------------------------------------------------------------------------------------------------------------------\
 |                                                                               MQTT ORGANISMO OPERADOR                                                                            |
 \----------------------------------------------------------------------------------------------------------------------------------------------------------------------*/
+    const MqttOperador = `tcp://${result[0].Host_Operador_Mqtt}:${result[0].Port_Operador_Mqtt}`;
+    console.log("Broker del operador", MqttOperador);
 
-    const MqttOperador = `ws://broker.emqx.io:8083/mqtt`;
     const connectMqttOperador = mqtt.connect(MqttOperador);
     connectMqttOperador.on("connect", () => {
-      console.log("Conectado al broker del operador");
-      connectMqttOperador.subscribe(`${TopicBase}/#`, (err) => {
-        if (!err) {
-          // Valida que el aun se encuentre la conecxion del plc
-          let status = socket.resume()._readableState.destroyed;
-          status ? socket.connect(options) : "";
-          //console.log(" MQTT ORGANISMO OPERADOR ",TopicBase)
-          ejecutarconsultas(
-            "select*from parametros where Permisos='S' order by Tipo asc",
-            (error, resultP) => {
-              if (!error) {
-                setInterval(() => {
-                  resultP.map(function (Tipo, index) {
-                    if (Tipo.Tipo == "BIT") {
-                      clientPLC
-                        .readCoils(Tipo.Addr, 1)
-                        .then((resultPLC) => {
-                          let ValorBoniba =
-                            resultPLC.response._body._valuesAsArray[0];
-                          // Enviar
-                          let EnviarDatos = {
-                            Nombre: Tipo.Nombre,
-                            Tipo: Tipo.Tipo,
-                            Valor: ValorBoniba,
-                          };
-                          connectMqttOperador.publish(
-                            `${TopicBase}/${Tipo.Nombre}`,
-                            JSON.stringify(EnviarDatos),
-                            { qos: 0, retain: false },
-                            (error) => {
-                              if (error) {
-                                console.log(
-                                  "Error al publicar a MQTT ORGANISMO OPERADOR"
-                                    .red
-                                );
+      //console.log("Conectado al broker del operador");
+      /*console.log(
+        "se intenta suscribir al broker del operador ",
+        result[0].Topico_Operador_Mqtt
+      );*/
+      connectMqttOperador.subscribe(
+        `${result[0].Topico_Operador_Mqtt}/#`,
+        (err) => {
+          if (!err) {
+            /*
+            console.log(
+              "se suscribió broker del operador ha ",
+              result[0].Topico_Operador_Mqtt
+            );*/
+            // Valida que el aun se encuentre la conecxion del plc
+            let status = socket.resume()._readableState.destroyed;
+            status ? socket.connect(options) : "";
+            //console.log(" MQTT ORGANISMO OPERADOR ",TopicBase)
+            ejecutarconsultas(
+              "select*from parametros where Permisos='S' order by Tipo asc",
+              (error, resultP) => {
+                Fecha = moment().utcOffset("-06:00").format("YYYY-MM-DD HH:mm:ss");
+                if (!error) {
+                  setInterval(() => {
+                    resultP.map(function (Tipo, index) {
+                      if (Tipo.Tipo == "BIT") {
+                        clientPLC
+                          .readCoils(Tipo.Addr, 1)
+                          .then((resultPLC) => {
+                            let ValorBoniba =
+                              resultPLC.response._body._valuesAsArray[0];
+                            // Enviar
+                            let EnviarDatos = {
+                              Ip_Publica: result[0].Ip_Publica,
+                              Ubicacion: {
+                                longitud: result[0].longitud,
+                                latitud: result[0].latitud,
+                              },
+                              fecha_hora: Fecha,
+                              id_estacion: "Por definir",
+                              nombre_estacion: "Por definir",
+                              Descripcion: Tipo.Nombre,
+                              Valor: ValorBoniba,
+                            };
+                            connectMqttOperador.publish(
+                              `${result[0].Topico_Operador_Mqtt}/${Tipo.Nombre}`,
+                              JSON.stringify(EnviarDatos),
+                              { qos: 0, retain: false },
+                              (error) => {
+                                if (error) {
+                                  console.log(
+                                    "Error al publicar a MQTT ORGANISMO OPERADOR"
+                                      .red
+                                  );
+                                } else {
+                                  console.log("envió de información");
+                                }
                               }
-                            }
-                          );
-                        })
-                        .catch(function () {
-                          console.log(
-                            "BIT " +
-                              require("util").inspect(arguments, {
-                                depth: null,
-                              }),
-                            null
-                          );
-                        });
-                    } else if (Tipo.Tipo == "FLOAT") {
-                      clientPLC
-                        .readCoils(Tipo.Addr, 2)
-                        .then((resultPLC) => {
-                          let FLOAT = resultPLC.response._body._valuesAsArray;
+                            );
+                          })
+                          .catch(function () {
+                            console.log(
+                              "BIT " +
+                                require("util").inspect(arguments, {
+                                  depth: null,
+                                }),
+                              null
+                            );
+                          });
+                      } else if (Tipo.Tipo == "FLOAT") {
+                        clientPLC
+                          .readCoils(Tipo.Addr, 2)
+                          .then((resultPLC) => {
+                            let FLOAT = resultPLC.response._body._valuesAsArray;
 
-                          let Bufer = Buffer.allocUnsafe(4);
-                          Bufer.writeUInt16BE(FLOAT[0], 2);
-                          Bufer.writeUInt16BE(FLOAT[1], 0);
-                          let ValorR = Bufer.readFloatBE(0);
-                          // Enviar
-                          let EnviarDatos = {
-                            Nombre: Tipo.Nombre,
-                            Tipo: Tipo.Tipo,
-                            Valor: ValorR,
-                          };
-                          connectMqttOperador.publish(
-                            `${TopicBase}/${Tipo.Nombre}`,
-                            JSON.stringify(EnviarDatos),
-                            { qos: 0, retain: false },
-                            (error) => {
-                              if (error) {
-                                console.log(
-                                  "Error al publicar a MQTT ORGANISMO OPERADOR"
-                                    .red
-                                );
+                            let Bufer = Buffer.allocUnsafe(4);
+                            Bufer.writeUInt16BE(FLOAT[0], 2);
+                            Bufer.writeUInt16BE(FLOAT[1], 0);
+                            let ValorR = Bufer.readFloatBE(0);
+                            // Enviar
+                            let EnviarDatos = {
+                              Ip_Publica: result[0].Ip_Publica,
+                              Ubicacion: {
+                                longitud: result[0].longitud,
+                                latitud: result[0].latitud,
+                              },
+                              fecha_hora: Fecha,
+                              id_estacion: "Por definir",
+                              nombre_estacion: "Por definir",,
+                              Descripcion: Tipo.Nombre,
+                              Valor: ValorR,
+                            };
+                            connectMqttOperador.publish(
+                              `${result[0].Topico_Operador_Mqtt}/${Tipo.Nombre}`,
+                              JSON.stringify(EnviarDatos),
+                              { qos: 0, retain: false },
+                              (error) => {
+                                if (error) {
+                                  console.log(
+                                    "Error al publicar a MQTT ORGANISMO OPERADOR"
+                                      .red
+                                  );
+                                }
                               }
-                            }
-                          );
-                        })
-                        .catch(function () {
-                          console.error(
-                            "FLOAT " +
-                              require("util").inspect(arguments, {
-                                depth: null,
-                              })
-                          );
-                        });
-                    } else {
-                      clientPLC
-                        .readHoldingRegisters(Tipo.Addr, 1)
-                        .then((resultPLC) => {
-                          let LecturaRegistros =
-                            resultPLC.response._body._valuesAsArray[0];
-                          // Enviar
-                          let EnviarDatos = {
-                            Nombre: Tipo.Nombre,
-                            Tipo: Tipo.Tipo,
-                            Valor: LecturaRegistros,
-                          };
-                          connectMqttOperador.publish(
-                            `${TopicBase}/${Tipo.Nombre}`,
-                            JSON.stringify(EnviarDatos) + "",
-                            { qos: 0, retain: false },
-                            (error) => {
-                              if (error) {
-                                console.log(
-                                  "Error al publicar a MQTT ORGANISMO OPERADOR"
-                                    .red
-                                );
+                            );
+                          })
+                          .catch(function () {
+                            console.error(
+                              "FLOAT " +
+                                require("util").inspect(arguments, {
+                                  depth: null,
+                                })
+                            );
+                          });
+                      } else {
+                        clientPLC
+                          .readHoldingRegisters(Tipo.Addr, 1)
+                          .then((resultPLC) => {
+                            let LecturaRegistros =
+                              resultPLC.response._body._valuesAsArray[0];
+                            // Enviar
+                            let EnviarDatos = {
+                              Ip_Publica: result[0].Ip_Publica,
+                              Ubicacion: {
+                                longitud: result[0].longitud,
+                                latitud: result[0].latitud,
+                              },
+                              fecha_hora: Fecha,
+                              id_estacion: "Por definir",
+                              nombre_estacion: "Por definir",
+                              Descripcion: Tipo.Nombre,
+                              Valor: LecturaRegistros,
+                            };
+                            connectMqttOperador.publish(
+                              `${result[0].Topico_Operador_Mqtt}/${Tipo.Nombre}`,
+                              JSON.stringify(EnviarDatos) + "",
+                              { qos: 0, retain: false },
+                              (error) => {
+                                if (error) {
+                                  console.log(
+                                    "Error al publicar a MQTT ORGANISMO OPERADOR"
+                                      .red
+                                  );
+                                }
                               }
-                            }
-                          );
-                        })
-                        .catch(function () {
-                          console.error("INT " +require("util").inspect(arguments, {depth: null,})
-                          );
-                        });
-                    }
-                  });
-                }, result[0].Mqtt_Time);
-              } else {
-                console.log("Error al consultar");
+                            );
+                          })
+                          .catch(function () {
+                            console.error(
+                              "INT " +
+                                require("util").inspect(arguments, {
+                                  depth: null,
+                                })
+                            );
+                          });
+                      }
+                    });
+                  }, result[0].Mqtt_Time);
+                } else {
+                  console.log("Error al consultar");
+                }
               }
-            }
-          );
-        } else {
-          console.log("Error al suscrobirse");
+            );
+          } else {
+            console.log("Error al suscribirse");
+          }
         }
-      });
+      );
     });
 
     connectMqttOperador.on("reconnect", () => {

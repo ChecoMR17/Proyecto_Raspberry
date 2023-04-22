@@ -40,11 +40,14 @@ if [[ $table_exists_Table1 == 0 ]]; then
     Host_Plc nvarchar(15) not null,
     Port_Plc int not null,
     Host_Mqtt nvarchar(100) not null,
-    Port_Mqtt int not null
+    Port_Mqtt int not null,
+    Host_Operador_Mqtt nvarchar(100) not null,
+    Port_Operador_Mqtt int not null,
+    Topico_Operador_Mqtt int not null
   );
 EOF
   mysql -h $DB_HOST -P $DB_PORT -u $DB_USER_NAME -p$DB_PASSWORD_NAME $DB_NAME << EOF
-  insert into Rasp(Num_OT,Calve_Rasp,Mqtt_Time,Mysql_Time,Host_Plc,Port_Plc,Host_Mqtt,Port_Mqtt) values('6419','6419_1','1000','600000','192.168.1.50','502','www.sistemaintegralrios.com','8080');
+  insert into Rasp(Num_OT,Calve_Rasp,Mqtt_Time,Mysql_Time,Host_Plc,Port_Plc,Host_Mqtt,Port_Mqtt,Host_Operador_Mqtt,Port_Operador_Mqtt,Topico_Operador_Mqtt) values('6419','6419_1','1000','5000','192.168.1.50','502','192.168.2.83','8080','broker.emqx.io','8083','set/#');
 EOF
 fi
 
