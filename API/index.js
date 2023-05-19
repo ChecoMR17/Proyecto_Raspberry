@@ -15,7 +15,7 @@ dotenv.config();
 /* Importa el objeto `conexión` desde un archivo llamado `config.db` y lo asigna a
 una variable connection. El propósito de este código es establecer una conexión a la base de datos
 usando el objeto `conexión` */
-const { connection } = require("./config.db");
+const { connection } = require("./config.db.min");
 
 /**
  * Esta función ejecuta varias consultas SQL y devuelve el resultado o un error a través de una función de
