@@ -78,7 +78,7 @@ ejecutarconsultas("select*from Rasp;", (error, result) => {
     /*mqttURL que contiene una URL de
     WebSocket para conectarse a un agente de MQTT. La URL se construye mediante la interpolación de
     cadenas para incluir la información del host y del puerto obtenida de una matriz de "resultados". */
-    const mqttURL = `tcp://${result[0].Host_Mqtt}:${result[0].Port_Mqtt}`;
+    const mqttURL = `ws://${result[0].Host_Mqtt}:${result[0].Port_Mqtt}/mqtt`;
 
     /* Client_Id y le asigna un valor de cadena que
     incluye la palabra "Server" seguida de un número aleatorio entre 1 y 10000. El propósito de
@@ -186,8 +186,8 @@ ejecutarconsultas("select*from Rasp;", (error, result) => {
                           //------------------------------------------------------
                           let EnviarDatos = {
                             fecha_hora: Fecha,
-                            id_estacion: "Por definir",
-                            nombre_estacion: "Por definir",
+                            id_estacion: result[0].Calve_Rasp,
+                            nombre_estacion: result[0].Nombre_Estacion,
                             Ip_Publica: result[0].Ip_Publica,
                             Ubicacion: {
                               longitud: result[0].longitud,
@@ -272,8 +272,8 @@ ejecutarconsultas("select*from Rasp;", (error, result) => {
                           // Enviar
                           let EnviarDatos = {
                             fecha_hora: Fecha,
-                            id_estacion: "Por definir",
-                            nombre_estacion: "Por definir",
+                            id_estacion: result[0].Calve_Rasp,
+                            nombre_estacion: result[0].Nombre_Estacion,
                             Ip_Publica: result[0].Ip_Publica,
                             Ubicacion: {
                               longitud: result[0].longitud,
@@ -315,8 +315,8 @@ ejecutarconsultas("select*from Rasp;", (error, result) => {
                           // Enviar
                           let EnviarDatos = {
                             fecha_hora: Fecha,
-                            id_estacion: "Por definir",
-                            nombre_estacion: "Por definir",
+                            id_estacion: result[0].Calve_Rasp,
+                            nombre_estacion: result[0].Nombre_Estacion,
                             Ip_Publica: result[0].Ip_Publica,
                             Ubicacion: {
                               longitud: result[0].longitud,
@@ -456,6 +456,7 @@ ejecutarconsultas("select*from Rasp;", (error, result) => {
     });
 
     clientMQTT.on("message", (topic, message) => {
+      //console.log(message);
       message = JSON.parse(message);
       let status = socket.resume()._readableState.destroyed;
       status ? socket.connect(options) : "";
@@ -464,9 +465,6 @@ ejecutarconsultas("select*from Rasp;", (error, result) => {
       switch (topic) {
         case `${TopicBase}/WR`:
           if (message.Addr != "" && message.Valor != "") {
-            /*
-            console.log(message.Addr)
-            console.log(message.Valor)*/
             clientPLC
               .writeSingleRegister(message.Addr, message.Valor)
               .then(function (resp) {
@@ -554,9 +552,11 @@ ejecutarconsultas("select*from Rasp;", (error, result) => {
                         { qos: 0, retain: false },
                         (errorP) => {
                           if (!errorP) {
-                            setTimeout(() => {
-                              throw "Reiniciar API por actualización de la BD";
-                            }, 150);
+                            if (message.query.includes("UPDATE")) {
+                              setTimeout(() => {
+                                throw "Reiniciar API por actualización de la BD";
+                              }, 250);
+                            }
                           }
                         }
                       );
@@ -571,7 +571,7 @@ ejecutarconsultas("select*from Rasp;", (error, result) => {
     });
 
     clientMQTT.on("reconnect", () => {
-      console.log("Reconectando a ");
+      console.log("Reconectando al broker de CGR "), mqttURL;
       ejecutarconsultas(
         "select*from parametros order by Tipo,Nombre asc",
         (error, resultP) => {
@@ -668,7 +668,7 @@ ejecutarconsultas("select*from Rasp;", (error, result) => {
     });
 
     clientMQTT.on("error", () => {
-      console.log("ERROR AL CONECTAR".red);
+      console.log("ERROR AL CONECTAR AL CONECTAR AL BROKER DE CGR ", mqttURL);
       ejecutarconsultas(
         "select*from parametros order by Tipo,Nombre asc",
         (error, resultP) => {
@@ -765,7 +765,10 @@ ejecutarconsultas("select*from Rasp;", (error, result) => {
     });
 
     clientMQTT.on("offline", () => {
-      console.log("Revisa tu coneccion a internet".red);
+      console.log(
+        "Revisa tu conexión a internet, no se puede conectar a CGR ",
+        mqttURL
+      );
       ejecutarconsultas(
         "select*from parametros order by Tipo,Nombre asc",
         (error, resultP) => {
@@ -861,30 +864,19 @@ ejecutarconsultas("select*from Rasp;", (error, result) => {
       );
     });
     clientMQTT.on("disconnect", () => {
-      console.log("desconectado".red);
+      console.log("desconectado a CGR ", mqttURL);
     });
     /*----------------------------------------------------------------------------------------------------------------------------------------------------------------------\
 |                                                                               MQTT ORGANISMO OPERADOR                                                                            |
 \----------------------------------------------------------------------------------------------------------------------------------------------------------------------*/
     const MqttOperador = `tcp://${result[0].Host_Operador_Mqtt}:${result[0].Port_Operador_Mqtt}`;
-    console.log("Broker del operador", MqttOperador);
-
     const connectMqttOperador = mqtt.connect(MqttOperador);
     connectMqttOperador.on("connect", () => {
-      //console.log("Conectado al broker del operador");
-      /*console.log(
-        "se intenta suscribir al broker del operador ",
-        result[0].Topico_Operador_Mqtt
-      );*/
+      console.log("Conectado al broker del operador");
       connectMqttOperador.subscribe(
         `${result[0].Topico_Operador_Mqtt}/#`,
         (err) => {
           if (!err) {
-            /*
-            console.log(
-              "se suscribió broker del operador ha ",
-              result[0].Topico_Operador_Mqtt
-            );*/
             // Valida que el aun se encuentre la conecxion del plc
             let status = socket.resume()._readableState.destroyed;
             status ? socket.connect(options) : "";
@@ -892,7 +884,9 @@ ejecutarconsultas("select*from Rasp;", (error, result) => {
             ejecutarconsultas(
               "select*from parametros where Permisos='S' order by Tipo asc",
               (error, resultP) => {
-                Fecha = moment().utcOffset("-06:00").format("YYYY-MM-DD HH:mm:ss");
+                Fecha = moment()
+                  .utcOffset("-06:00")
+                  .format("YYYY-MM-DD HH:mm:ss");
                 if (!error) {
                   setInterval(() => {
                     resultP.map(function (Tipo, index) {
@@ -910,13 +904,13 @@ ejecutarconsultas("select*from Rasp;", (error, result) => {
                                 latitud: result[0].latitud,
                               },
                               fecha_hora: Fecha,
-                              id_estacion: "Por definir",
-                              nombre_estacion: "Por definir",
+                              id_estacion: "184",
+                              nombre_estacion: result[0].Nombre_Estacion,
                               Descripcion: Tipo.Nombre,
                               Valor: ValorBoniba,
                             };
                             connectMqttOperador.publish(
-                              `${result[0].Topico_Operador_Mqtt}/${Tipo.Nombre}`,
+                              `${result[0].Topico_Operador_Mqtt}`,
                               JSON.stringify(EnviarDatos),
                               { qos: 0, retain: false },
                               (error) => {
@@ -958,13 +952,13 @@ ejecutarconsultas("select*from Rasp;", (error, result) => {
                                 latitud: result[0].latitud,
                               },
                               fecha_hora: Fecha,
-                              id_estacion: "Por definir",
-                              nombre_estacion: "Por definir",,
+                              id_estacion: "184",
+                              nombre_estacion: result[0].Nombre_Estacion,
                               Descripcion: Tipo.Nombre,
                               Valor: ValorR,
                             };
                             connectMqttOperador.publish(
-                              `${result[0].Topico_Operador_Mqtt}/${Tipo.Nombre}`,
+                              `${result[0].Topico_Operador_Mqtt}`,
                               JSON.stringify(EnviarDatos),
                               { qos: 0, retain: false },
                               (error) => {
@@ -999,13 +993,13 @@ ejecutarconsultas("select*from Rasp;", (error, result) => {
                                 latitud: result[0].latitud,
                               },
                               fecha_hora: Fecha,
-                              id_estacion: "Por definir",
-                              nombre_estacion: "Por definir",
+                              id_estacion: "184",
+                              nombre_estacion: result[0].Nombre_Estacion,
                               Descripcion: Tipo.Nombre,
                               Valor: LecturaRegistros,
                             };
                             connectMqttOperador.publish(
-                              `${result[0].Topico_Operador_Mqtt}/${Tipo.Nombre}`,
+                              `${result[0].Topico_Operador_Mqtt}`,
                               JSON.stringify(EnviarDatos) + "",
                               { qos: 0, retain: false },
                               (error) => {
@@ -1028,7 +1022,7 @@ ejecutarconsultas("select*from Rasp;", (error, result) => {
                           });
                       }
                     });
-                  }, result[0].Mqtt_Time);
+                  }, result[0].Mqtt_Time_Operador);
                 } else {
                   console.log("Error al consultar");
                 }
@@ -1042,24 +1036,27 @@ ejecutarconsultas("select*from Rasp;", (error, result) => {
     });
 
     connectMqttOperador.on("reconnect", () => {
-      console.log("Reconectando a ");
+      console.log("Reconectando al broker operador ", MqttOperador);
     });
 
     connectMqttOperador.on("error", () => {
-      console.log("ERROR AL CONECTAR".red);
+      console.log("ERROR AL CONECTAR AL BROKER OPERADOR ", MqttOperador);
     });
 
     connectMqttOperador.on("offline", () => {
-      console.log("Revisa tu coneccion a internet".red);
+      console.log(
+        "Revisa tu conexión a internet, no se pudo conectar al broker operador ",
+        MqttOperador
+      );
     });
     connectMqttOperador.on("disconnect", () => {
-      console.log("desconectado".red);
+      console.log("desconectado del broker operador ", MqttOperador);
     });
   } else {
-    console.log("Error al consultar la base de datos");
+    console.log("Error al consultar la base de datos ");
   }
 });
 
 setInterval(() => {
-  throw "Reiniciar API para recolección ".green;
+  throw "Reiniciar API ".green;
 }, 300000);
